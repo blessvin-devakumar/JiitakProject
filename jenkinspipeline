@@ -1,0 +1,26 @@
+node
+{
+   
+   stage("Git Clone"){
+        git url: 'https://github.com/blessvin-devakumar/JiitakProject.git',branch: 'main'
+        
+    }
+     
+    stage("Build Docker Image") {
+        sh "docker build -t blessvindevakumar/jiitakproject ."
+    }
+    
+    stage("Docker login and Push"){
+        withCredentials([string(credentialsId: 'docker_hub_password', variable: 'docker_hub_password')]){
+         sh "docker login -u blessvindevakumar -p ${Docker_hub_password} " 
+           }
+        sh "docker push blessvindevakumar/jiitakproject"
+    }
+    
+    stage("Deploy to dockercontainer in docker deployer"){
+        sshagent(['docker_ssh_password']) {
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.35.192 docker rm -f jiitakprojectcontainer || true"
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.35.192 docker run -d -p 8080:8080 --name jiitakprojectcontainer blessvindevakumar/jiitakproject"           
+    }
+    }
+}
